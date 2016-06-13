@@ -8,9 +8,9 @@
 
 import Foundation
 
-func multiply(opt1:Double, opt2:Double) -> Double {
-    return opt1 * opt2
-}
+//func multiply(opt1:Double, opt2:Double) -> Double {
+//    return opt1 * opt2
+//}
 
 class CaculatorBrain
 {
@@ -23,12 +23,16 @@ class CaculatorBrain
         
     }
     
-    var operations : Dictionary<String,Operation> = [
+    private var operations : Dictionary<String,Operation> = [
         "π" : Operation.Constant(M_PI),
         "e" : Operation.Constant(M_E),
         "√" : Operation.UnaryOperation(sqrt),
         "cos" :Operation.UnaryOperation(cos),
-        "×" :Operation.BinaryOperation(multiply),
+//        "×" :Operation.BinaryOperation(multiply),
+        "×" :Operation.BinaryOperation({$0 * $1}),
+        "÷" :Operation.BinaryOperation({$0 / $1}),
+        "+" :Operation.BinaryOperation({$0 + $1}),
+        "−" :Operation.BinaryOperation({$0 - $1}),
         "=" :Operation.Equals
     ]
     
@@ -39,11 +43,29 @@ class CaculatorBrain
             switch operation {
             case .Constant(let value): accumulator = value
             case .UnaryOperation(let foo): accumulator = foo(accumulator)
-            case.BinaryOperation: break
-            case.Equals: break
+            case.BinaryOperation(let function):
+                executePendingBinaryOperation()
+                pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
+            case.Equals:
+                executePendingBinaryOperation()
             }
         }
         
+    }
+    
+    private func executePendingBinaryOperation()
+    {
+        if pending != nil {
+            accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
+            pending = nil
+        }
+    }
+    
+    private var pending: PendingBinaryOperationInfo?
+    
+    private struct PendingBinaryOperationInfo {
+        var binaryFunction: (Double, Double) -> Double
+        var firstOperand: Double
     }
     
     enum Operation {
